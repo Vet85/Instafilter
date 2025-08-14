@@ -14,6 +14,11 @@ import SwiftUI
 struct ContentView: View {
     @State private var processedImage: Image?
     @State private var filterIntensity = 0.5
+    @State private var filterRadius = 0.5
+    @State private var filterScale = 0.5
+    @State private var intensity = false
+    @State private var radius = false
+    @State private var scale = false
     @State private var selectedItem: PhotosPickerItem?
     @State private var showingFilter = false
     
@@ -33,6 +38,7 @@ struct ContentView: View {
                        processedImage
                            .resizable()
                            .scaledToFit()
+                       
                    } else {
                        ContentUnavailableView("No picture", systemImage: "photo.badge.plus", description: Text("Tap to import a photo"))
                    }
@@ -42,20 +48,39 @@ struct ContentView: View {
                
                Spacer()
                
-               HStack {
-                   Text("Intensity")
-                   Slider(value: $filterIntensity)
-                       .onChange(of: filterIntensity, applyProcessing)
-               }
-               HStack {
-                   Button("Change filter", action: changeFilter)
-                   
-                   Spacer()
-                   
-                   if let processedImage {
-                       ShareLink(item: processedImage, preview: SharePreview("Instafilter image", image: processedImage))
+               if intensity {
+                   HStack {
+                       Text("Intensity")
+                       Slider(value: $filterIntensity)
+                           .onChange(of: filterIntensity, applyProcessing)
+                   } .disabled(processedImage == nil)
+               } else {  }
+               if radius {
+                   HStack {
+                       Text("Radius")
+                       Slider(value: $filterRadius)
+                           .onChange(of: filterRadius, applyProcessing)
+                   } .disabled(processedImage == nil)
+               } else {  }
+               if scale {
+                   HStack {
+                       Text("Scale")
+                       Slider(value: $filterScale)
+                           .onChange(of: filterScale, applyProcessing)
+                   } .disabled(processedImage == nil)
+               } else {  }
+               
+                   HStack {
+                       if let processedImage {
+                       Button("Change filter", action: changeFilter)
+                           
+                       Spacer()
+                       
+                       
+                           ShareLink(item: processedImage, preview: SharePreview("Instafilter image", image: processedImage))
+                       }
                    }
-               }
+                
            }
            .padding([.horizontal,.bottom])
            .navigationTitle("Instafilter")
@@ -65,8 +90,11 @@ struct ContentView: View {
                Button("Sepia Tone") { setFilter(CIFilter.sepiaTone())}
                Button("Gaussian Blur") { setFilter(CIFilter.gaussianBlur())}
                Button("Pixellate") { setFilter(CIFilter.pixellate())}
-               Button("Unsharp Mask") { setFilter(CIFilter.unsharpMask())}
-               Button("Vignette") { setFilter(CIFilter.vignette())}
+               Button("Unsharp Mask") { setFilter(CIFilter.unsharpMask() )}
+               Button("Vignette") { setFilter(CIFilter.vignette() )}
+               Button("affineClamp") { setFilter(CIFilter.affineClamp() )}
+               Button("bloom") { setFilter(CIFilter.bloom() )}
+               Button("circularScreen") { setFilter(CIFilter.circularScreen() )}
                Button("Cancel", role: .cancel) { }
            }
        }
@@ -81,7 +109,11 @@ struct ContentView: View {
             // more code to come
             let beginImage = CIImage(image: inputImage)
             currentFilter.setValue(beginImage, forKey: kCIInputImageKey)
+            intensity = false
+            radius = false
+            scale = false
             applyProcessing()
+           
             
         }
     }
@@ -91,12 +123,15 @@ struct ContentView: View {
         
         if inputKeys.contains(kCIInputIntensityKey) {
             currentFilter.setValue(filterIntensity, forKey: kCIInputIntensityKey)
+            intensity = true
         }
         if inputKeys.contains(kCIInputRadiusKey) {
-            currentFilter.setValue(filterIntensity * 200, forKey: kCIInputRadiusKey)
+            currentFilter.setValue(filterRadius * 200, forKey: kCIInputRadiusKey)
+            radius = true
         }
         if inputKeys.contains(kCIInputScaleKey) {
-            currentFilter.setValue(filterIntensity * 10, forKey: kCIInputScaleKey)
+            currentFilter.setValue(filterScale * 10, forKey: kCIInputScaleKey)
+            scale = true
         }
         
         guard let outputImage = currentFilter.outputImage else { return }
